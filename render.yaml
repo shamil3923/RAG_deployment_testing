@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: rag-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NVIDIA_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: LLM_MODEL
+        value: meta/llama-3.3-70b-instruct
+      # Set the secret value in the Render dashboard, not in git.
+      - key: NVIDIA_API_KEY
+        sync: false
