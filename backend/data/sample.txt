@@ -1,0 +1,18 @@
+Kaya is a fictional company used for this interview demo. Kaya builds an AI-powered
+customer support platform. The platform ingests a company's help-center articles and
+product documentation, then answers customer questions using retrieval-augmented
+generation (RAG).
+
+Founded in 2023, Kaya is headquartered in Colombo, Sri Lanka. The engineering team
+works primarily with React on the frontend and Python (FastAPI) on the backend.
+
+Kaya's RAG pipeline has three stages:
+1. Ingestion - documents are split into overlapping chunks and embedded into vectors.
+2. Retrieval - an incoming question is embedded and the most similar chunks are fetched
+   from a vector database (Chroma in this demo).
+3. Generation - the retrieved chunks are passed as context to a large language model
+   (Qwen, served through NVIDIA's OpenAI-compatible API) which writes the final answer.
+
+Kaya offers three pricing tiers: Starter at 0 dollars per month for up to 100 questions,
+Pro at 49 dollars per month for up to 10,000 questions, and Enterprise with custom pricing
+and on-premise deployment. The free Starter tier does not include analytics.
