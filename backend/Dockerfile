@@ -24,5 +24,5 @@ VOLUME ["/app/chroma_db"]
 
 EXPOSE 8000
 
-# Run Uvicorn; in production consider using gunicorn+uvicorn workers or a process manager
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run Uvicorn; bind to the platform-provided $PORT (Render/Cloud Run) or 8000 locally.
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
