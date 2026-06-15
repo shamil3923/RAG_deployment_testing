@@ -80,8 +80,13 @@ export default function App() {
         <button onClick={ingest} disabled={!docText.trim()}>Add text</button>
 
         <label className="filebtn">
-          Upload .txt / .pdf
-          <input type="file" accept=".txt,.md,.pdf" onChange={onFile} hidden />
+          Upload pdf / docx / image / txt
+          <input
+            type="file"
+            accept=".txt,.md,.pdf,.docx,.png,.jpg,.jpeg,.webp,.gif,.bmp"
+            onChange={onFile}
+            hidden
+          />
         </label>
 
         <button className="ghost" onClick={clearAll}>Clear all</button>
