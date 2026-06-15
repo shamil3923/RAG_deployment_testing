@@ -1,13 +1,12 @@
 """FastAPI app: ingest documents, then chat with RAG over them."""
-import io
-
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from pypdf import PdfReader
 
+import config
 import rag
 import llm
+import extract
 
 app = FastAPI(title="Kaya RAG API")
 
@@ -48,11 +47,10 @@ def ingest_text(body: IngestText):
 async def ingest_file(file: UploadFile = File(...)):
     raw = await file.read()
     name = file.filename or "upload"
-    if name.lower().endswith(".pdf"):
-        reader = PdfReader(io.BytesIO(raw))
-        text = "\n".join(page.extract_text() or "" for page in reader.pages)
-    else:
-        text = raw.decode("utf-8", errors="ignore")
+    try:
+        text = extract.extract_text(raw, name)
+    except Exception as e:  # extraction (e.g. vision) can fail on odd files
+        raise HTTPException(400, f"Could not read the file: {e}")
     n = rag.add_document(text, name)
     if n == 0:
         raise HTTPException(400, "Could not extract any text from the file.")
@@ -63,12 +61,24 @@ async def ingest_file(file: UploadFile = File(...)):
 def chat(body: ChatRequest):
     if not body.message.strip():
         raise HTTPException(400, "Empty message.")
-    chunks = rag.retrieve(body.message)
-    if not chunks:
+
+    # 1. Hybrid retrieval (dense + BM25 + RRF) -> candidate pool.
+    candidates = rag.retrieve(body.message)
+    if not candidates:
         return {
             "answer": "No documents have been ingested yet. Add some text or a file first.",
             "sources": [],
         }
+
+    # 2. Anti-hallucination gate: if nothing is semantically close, don't answer.
+    if max(c["score"] for c in candidates) < config.RELEVANCE_THRESHOLD:
+        return {
+            "answer": "I don't have enough information in the knowledge base to answer that.",
+            "sources": [],
+        }
+
+    # 3. LLM rerank the pool down to the best TOP_K, then answer over those.
+    chunks = llm.rerank(body.message, candidates, config.TOP_K)
     answer = llm.generate_answer(body.message, chunks)
     sources = [
         {"n": i + 1, "source": c["source"], "score": c["score"], "preview": c["text"][:160]}
